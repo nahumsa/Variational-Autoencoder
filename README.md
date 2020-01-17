@@ -5,7 +5,7 @@ using conda:
 
 - conda env create -f environment.yml
 
-- source activate generative
+- source activate VAE_env
 
 To put this environtmen on your jupyter notebook environment you need to type the following comands:
 
@@ -15,7 +15,7 @@ To put this environtmen on your jupyter notebook environment you need to type th
 
 - conda install ipykernel
 
-- python -m ipykernel install --user --name generative
+- python -m ipykernel install --user --name VAE_env
 
 -----------------------------------------------------------------
 
