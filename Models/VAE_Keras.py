@@ -5,8 +5,6 @@ from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint 
 from keras.utils import plot_model
 
-from utils.callbacks import CustomCallback, step_decay_schedule 
-
 import numpy as np
 import json
 import os
@@ -185,14 +183,14 @@ class VariationalAutoencoder_Keras():
 
     def train(self, x_train, batch_size, epochs, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
 
-        custom_callback = CustomCallback(run_folder, print_every_n_batches, initial_epoch, self)
-        lr_sched = step_decay_schedule(initial_lr=self.learning_rate, decay_factor=lr_decay, step_size=1)
+        # custom_callback = CustomCallback(run_folder, print_every_n_batches, initial_epoch, self)
+        # lr_sched = step_decay_schedule(initial_lr=self.learning_rate, decay_factor=lr_decay, step_size=1)
         
         checkpoint_filepath=os.path.join(run_folder, "weights/weights-{epoch:03d}-{loss:.2f}.h5")
         checkpoint1 = ModelCheckpoint(checkpoint_filepath, save_weights_only = True, verbose=1)
         checkpoint2 = ModelCheckpoint(os.path.join(run_folder, 'weights/weights.h5'), save_weights_only = True, verbose=1)
 
-        callbacks_list = [checkpoint1, checkpoint2, custom_callback, lr_sched]
+        callbacks_list = [checkpoint1, checkpoint2]
 
         self.model.fit(     
             x_train
