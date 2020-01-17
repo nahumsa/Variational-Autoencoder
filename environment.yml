@@ -1,4 +1,4 @@
-name: generative
+name: VAE
 channels:
   - anaconda
   - conda-forge
@@ -87,7 +87,6 @@ dependencies:
     - jupyter-core==4.4.0
     - keras==2.2.4
     - keras-applications==1.0.7
-    - keras-contrib==2.0.8
     - keras-preprocessing==1.0.9
     - kiwisolver==1.0.1
     - markdown==3.0.1
