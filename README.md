@@ -23,3 +23,4 @@ Examples using a Beta-Variational autoencoder.
 
 - MNIST with Beta-Variational Autoencoder with Tensorflow.
 
+- MNIST with Beta-Variational Autoencoder with Keras.
