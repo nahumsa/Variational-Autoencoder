@@ -1,4 +1,4 @@
-from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout
+from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Reshape, Lambda, Activation, BatchNormalization, LeakyReLU, Dropout, Concatenate
 from keras.models import Model
 from keras import backend as K
 from keras.optimizers import Adam
@@ -523,7 +523,8 @@ class Scinet_VariationalAutoencoder_Keras():
     input_dim(tuple): Dimentions of the input.
     encoder_dense_units(list): Units of the dense layer of the encoder.
     decoder_dense_units(list): Units of the dense layer of the decoder.
-    z_dim(int): Dimension of the latent layer
+    z_dim(int): Dimension of the latent layer.
+    q_dim(int): Dimension of the question layer.
     use_batch_norm(Boolean): True if want to use batch normalization.
                              (default=False)
     use_dropout(Boolean): True if want to use dropout layers.
@@ -535,6 +536,7 @@ class Scinet_VariationalAutoencoder_Keras():
         , encoder_dense_units
         , decoder_dense_units
         , z_dim
+        , q_dim
         , use_batch_norm = False
         , use_dropout= False
         ):
@@ -548,7 +550,8 @@ class Scinet_VariationalAutoencoder_Keras():
         self.decoder_dense_units = decoder_dense_units
         
         self.z_dim = z_dim
-
+        self.q_dim = q_dim
+        
         self.use_batch_norm = use_batch_norm
         self.use_dropout = use_dropout
 
@@ -582,8 +585,9 @@ class Scinet_VariationalAutoencoder_Keras():
                 x = Dropout(rate = 0.25)(x)
 
         shape_before_flattening = K.int_shape(x)[1:]
-
-        x = Flatten()(x)
+        
+        print(shape_before_flattening)
+        
         self.mu = Dense(self.z_dim, name='mu')(x)
         self.log_var = Dense(self.z_dim, name='log_var')(x)
 
@@ -600,14 +604,16 @@ class Scinet_VariationalAutoencoder_Keras():
         
         
 
-        ### THE DECODER
+        ### THE DECODER                
         
-        #Put input 2
+        question_input = Input(shape=self.q_dim, name='question_input') 
         
         decoder_input = Input(shape=(self.z_dim,), name='decoder_input')
         
-        x = Dense(np.prod(shape_before_flattening))(decoder_input)
-        x = Reshape(shape_before_flattening)(x)
+        Merge = Concatenate(axis=1, name='Concatenate_Q_Z')([question_input,decoder_input])                
+        
+        x = Dense(np.prod(shape_before_flattening))(Merge)
+        
 
         for i in range(self.n_layers_decoder):
             
@@ -635,13 +641,13 @@ class Scinet_VariationalAutoencoder_Keras():
 
         decoder_output = x
 
-        self.decoder = Model(decoder_input, decoder_output)
+        self.decoder = Model([question_input,decoder_input], decoder_output)
 
         ### THE FULL VAE
         model_input = encoder_input
-        model_output = self.decoder(encoder_output)
+        model_output = self.decoder([question_input,encoder_output])
 
-        self.model = Model(model_input, model_output)
+        self.model = Model([model_input,question_input], model_output)
 
 
     def compile(self, learning_rate, r_loss_factor, Beta):
@@ -663,7 +669,7 @@ class Scinet_VariationalAutoencoder_Keras():
 
         ### COMPILATION
         def vae_r_loss(y_true, y_pred):
-            r_loss = K.mean(K.square(y_true - y_pred), axis = [1,2,3])
+            r_loss = K.mean(K.square(y_true - y_pred), axis = 1)
             return r_loss_factor * r_loss
 
         def vae_kl_loss(y_true, y_pred):
@@ -703,11 +709,9 @@ class Scinet_VariationalAutoencoder_Keras():
     def load_weights(self, filepath):
         self.model.load_weights(filepath)
 
-    def train(self, x_train, batch_size, epochs, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
+    def train(self, x_train, y_train, batch_size, epochs, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
 
-        # custom_callback = CustomCallback(run_folder, print_every_n_batches, initial_epoch, self)
-        # lr_sched = step_decay_schedule(initial_lr=self.learning_rate, decay_factor=lr_decay, step_size=1)
-        
+                
         checkpoint_filepath=os.path.join(run_folder, "weights/weights-{epoch:03d}-{loss:.2f}.h5")
         checkpoint1 = ModelCheckpoint(checkpoint_filepath, save_weights_only = True, verbose=1)
         checkpoint2 = ModelCheckpoint(os.path.join(run_folder, 'weights/weights.h5'), save_weights_only = True, verbose=1)
@@ -716,7 +720,7 @@ class Scinet_VariationalAutoencoder_Keras():
 
         self.model.fit(     
             x_train
-            , x_train
+            , y_train
             , batch_size = batch_size
             , shuffle = True
             , epochs = epochs
