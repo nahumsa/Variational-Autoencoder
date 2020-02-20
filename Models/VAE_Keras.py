@@ -214,11 +214,9 @@ class VariationalAutoencoder_Keras():
         self.model.load_weights(filepath)
 
     def train(self, x_train, batch_size, epochs, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
-
-        # custom_callback = CustomCallback(run_folder, print_every_n_batches, initial_epoch, self)
-        # lr_sched = step_decay_schedule(initial_lr=self.learning_rate, decay_factor=lr_decay, step_size=1)
-        
+    
         checkpoint_filepath=os.path.join(run_folder, "weights/weights-{epoch:03d}-{loss:.2f}.h5")
+        
         checkpoint1 = ModelCheckpoint(checkpoint_filepath, save_weights_only = True, verbose=1)
         checkpoint2 = ModelCheckpoint(os.path.join(run_folder, 'weights/weights.h5'), save_weights_only = True, verbose=1)
 
@@ -584,9 +582,7 @@ class Scinet_VariationalAutoencoder_Keras():
             if self.use_dropout:
                 x = Dropout(rate = 0.25)(x)
 
-        shape_before_flattening = K.int_shape(x)[1:]
-        
-        print(shape_before_flattening)
+        shape_before_flattening = K.int_shape(x)[1:]                
         
         self.mu = Dense(self.z_dim, name='mu')(x)
         self.log_var = Dense(self.z_dim, name='log_var')(x)
@@ -669,7 +665,7 @@ class Scinet_VariationalAutoencoder_Keras():
 
         ### COMPILATION
         def vae_r_loss(y_true, y_pred):
-            r_loss = K.mean(K.square(y_true - y_pred), axis = 1)
+            r_loss = K.mean(K.square(y_true - y_pred), axis = -1)
             return r_loss_factor * r_loss
 
         def vae_kl_loss(y_true, y_pred):
@@ -709,7 +705,7 @@ class Scinet_VariationalAutoencoder_Keras():
     def load_weights(self, filepath):
         self.model.load_weights(filepath)
 
-    def train(self, x_train, y_train, batch_size, epochs, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
+    def train(self, x_train, y_train, batch_size, epochs, run_folder, verbose=2, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
 
                 
         checkpoint_filepath=os.path.join(run_folder, "weights/weights-{epoch:03d}-{loss:.2f}.h5")
@@ -724,6 +720,7 @@ class Scinet_VariationalAutoencoder_Keras():
             , batch_size = batch_size
             , shuffle = True
             , epochs = epochs
+            , verbose = verbose
             , initial_epoch = initial_epoch
             , callbacks = callbacks_list
         )
