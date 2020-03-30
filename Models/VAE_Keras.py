@@ -266,7 +266,7 @@ class VariationalAutoencoder_Keras():
         
 
         
-class Dense_VariationalAutoencoder_Keras():
+class DenseVariationalAutoencoderKeras():
     """
     Variational Autoencoder with Dense layers.
     
@@ -316,7 +316,7 @@ class Dense_VariationalAutoencoder_Keras():
         
         ### THE ENCODER
         encoder_input = Input(shape=self.input_dim, name='encoder_input')
-
+        
         x = encoder_input
 
         for i in range(self.n_layers_encoder):
@@ -337,8 +337,7 @@ class Dense_VariationalAutoencoder_Keras():
                 x = Dropout(rate = 0.25)(x)
 
         shape_before_flattening = K.int_shape(x)[1:]
-
-        x = Flatten()(x)
+        #x = Flatten()(x)
         self.mu = Dense(self.z_dim, name='mu')(x)
         self.log_var = Dense(self.z_dim, name='log_var')(x)
 
@@ -382,7 +381,7 @@ class Dense_VariationalAutoencoder_Keras():
                 if self.use_dropout:
                     x = Dropout(rate = 0.25)(x)
             else:
-                x = Activation('sigmoid')(x)
+                x = Activation('linear')(x)
 
             
 
@@ -416,7 +415,7 @@ class Dense_VariationalAutoencoder_Keras():
 
         ### COMPILATION
         def vae_r_loss(y_true, y_pred):
-            r_loss = K.mean(K.square(y_true - y_pred), axis = [1,2,3])
+            r_loss = K.mean(K.square(y_true - y_pred), axis = -1)
             return r_loss_factor * r_loss
 
         def vae_kl_loss(y_true, y_pred):
