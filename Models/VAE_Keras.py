@@ -4,6 +4,7 @@ from keras import backend as K
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint 
 from keras.utils import plot_model
+import tensorflow as tf
 
 import numpy as np
 import json
@@ -411,7 +412,7 @@ class DenseVariationalAutoencoderKeras():
               
         """
         
-        self.learning_rate = learning_rate
+        self.learning_rate = learning_rate        
 
         ### COMPILATION
         def vae_r_loss(y_true, y_pred):
@@ -428,7 +429,12 @@ class DenseVariationalAutoencoderKeras():
             return  r_loss + Beta*kl_loss
 
         optimizer = Adam(lr=learning_rate)
-        self.model.compile(optimizer=optimizer, loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+        self.model.compile(optimizer=optimizer, 
+                           loss = vae_loss,  
+                           metrics = ['accuracy', 
+                                      vae_r_loss, 
+                                      vae_kl_loss]
+                          )
 
 
     def save(self, folder):
@@ -455,7 +461,7 @@ class DenseVariationalAutoencoderKeras():
     def load_weights(self, filepath):
         self.model.load_weights(filepath)
 
-    def train(self, x_train, batch_size, epochs, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
+    def train(self, x_train, y_train, batch_size, epochs, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1):
 
         # custom_callback = CustomCallback(run_folder, print_every_n_batches, initial_epoch, self)
         # lr_sched = step_decay_schedule(initial_lr=self.learning_rate, decay_factor=lr_decay, step_size=1)
@@ -466,15 +472,16 @@ class DenseVariationalAutoencoderKeras():
 
         callbacks_list = [checkpoint1, checkpoint2]
 
-        self.model.fit(     
-            x_train
-            , x_train
-            , batch_size = batch_size
-            , shuffle = True
-            , epochs = epochs
-            , initial_epoch = initial_epoch
-            , callbacks = callbacks_list
-        )
+        history = self.model.fit(     
+                                  x_train
+                                  , y_train
+                                  , batch_size = batch_size
+                                  , shuffle = True
+                                  , epochs = epochs
+                                  , initial_epoch = initial_epoch
+                                  , callbacks = callbacks_list
+                                )
+        return history
 
 
 
